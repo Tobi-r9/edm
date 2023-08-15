@@ -74,12 +74,14 @@ def training_loop(
     interface_kwargs = dict(img_resolution=dataset_obj.resolution, img_channels=dataset_obj.num_channels, label_dim=dataset_obj.label_dim)
     net = dnnlib.util.construct_class_by_name(**network_kwargs, **interface_kwargs) # subclass of torch.nn.Module
     net.train().requires_grad_(True).to(device)
-    if dist.get_rank() == 0:
-        with torch.no_grad():
-            images = torch.zeros([batch_gpu, net.img_channels, net.img_resolution, net.img_resolution], device=device)
-            sigma = torch.ones([batch_gpu], device=device)
-            labels = torch.zeros([batch_gpu, net.label_dim], device=device)
-            misc.print_module_summary(net, [images, sigma, labels], max_nesting=2)
+    # if dist.get_rank() == 0:
+    with torch.no_grad():
+        images = torch.zeros([batch_gpu, net.img_channels, net.img_resolution, net.img_resolution], device=device)
+        sigma = torch.ones([batch_gpu], device=device)
+        labels = torch.zeros([batch_gpu, net.label_dim], device=device)
+        # misc.print_module_summary(net, [images, sigma, labels], max_nesting=2)
+    params = list(net.parameters())
+    dist.print0(f"param from device {dist.get_rank()} after init: {params[0][0][0]}")
 
     # Setup optimizer.
     dist.print0('Setting up optimizer...')
@@ -107,6 +109,9 @@ def training_loop(
         misc.copy_params_and_buffers(src_module=data['net'], dst_module=net, require_all=True)
         optimizer.load_state_dict(data['optimizer_state'])
         del data # conserve memory
+
+    params = list(net.parameters())
+    dist.print0(f"param from device {dist.get_rank()}: {params[0][0][0]}")
 
     # Train.
     dist.print0(f'Training for {total_kimg} kimg...')
