@@ -129,10 +129,12 @@ def calc(image_path, ref_path, num_expected, seed, batch):
             ref = dict(np.load(f))
 
     mu, sigma = calculate_inception_stats(image_path=image_path, num_expected=num_expected, seed=seed, max_batch_size=batch)
+    fid_folder = os.path.dirname(image_path)
     dist.print0('Calculating FID...')
     if dist.get_rank() == 0:
         fid = calculate_fid_from_inception_stats(mu, sigma, ref['mu'], ref['sigma'])
-        print(f'{fid:g}')
+        with open(os.path.join(fid_folder, "fid.txt"), "w") as text_file:
+            text_file.write(f"FID: {fid:g}")
     torch.distributed.barrier()
 
 #----------------------------------------------------------------------------
