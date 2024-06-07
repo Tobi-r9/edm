@@ -3,6 +3,8 @@ sys.path.insert(0, '/p/project/obdifflearn/thoeppe/edm')
 import torch
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import pickle
 from image_datasets import load_data
 import PIL
@@ -50,14 +52,31 @@ def get_discretization_steps(model, device, num_steps=18, sigma_min=0.002, sigma
     t_steps = torch.cat([model.round_sigma(t_steps), torch.zeros_like(t_steps[:1])]) # t_N = 0
     return t_steps
 
+def create_image_grid(original_image, denoised_images, ratio, image_shape=(32, 32, 3), grid_size=(4, 4), save_path='image_grid.png'):
+    fig, axes = plt.subplots(*grid_size, figsize=(grid_size[1]*2, grid_size[0]*2))
+    fig.subplots_adjust(hspace=0.1, wspace=0.1)
+
+    num_images = len(denoised_images)
+    for i, ax in enumerate(axes.flat):
+        if i == grid_size[0] * grid_size[1] - 1: 
+            ax.imshow(original_image)
+            rect = patches.Rectangle((0, 0), image_shape[1], image_shape[0], linewidth=2, edgecolor='red', facecolor='none')
+            ax.add_patch(rect)
+        elif i < num_images:
+            ax.imshow(denoised_images[i])
+        ax.axis('off')
+    plt.suptitle(f'Red box indicates original image - ratio t/T: {ratio:.2f}', fontsize=16)
+    plt.savefig(save_path, bbox_inches='tight')
+    plt.close()
+
 
 def main(model_path, data_path, save_path):
-    iterations=1
-    num_steps=18
+    iterations=15
+    num_steps=25
     sigma_min=0.002
     sigma_max=80
     rho=5
-    batch_size=8
+    batch_size=12
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     with open(model_path, 'rb') as f:
@@ -71,17 +90,25 @@ def main(model_path, data_path, save_path):
         class_cond=False,
     )
 
-    for i in range(iterations):
-        images, _ = next(data)
-        t_steps = get_discretization_steps(model=model, device=device, num_steps=num_steps, sigma_min=sigma_min, sigma_max=sigma_max, rho=rho)
-
-        for step in range(num_steps - 1):
-            denoised = edm_sampler(model, images.to(device), t_steps[step:])
-
-            denoised = (denoised * 127.5 + 128).clip(0, 255).to(torch.uint8).permute(0, 2, 3, 1).cpu().numpy()
-            for b, img in enumerate(denoised):
-                os.makedirs(f"{save_path}/{i}/{b}", exist_ok=True)
-                PIL.Image.fromarray(img, 'RGB').save(f"{save_path}/{i}/{b}/step_{step}.png")
+    
+    images, _ = next(data)
+    original_img = (images * 127.5 + 128).clip(0, 255).to(torch.uint8).permute(0, 2, 3, 1).cpu().numpy()
+    t_steps = get_discretization_steps(model=model, device=device, num_steps=num_steps, sigma_min=sigma_min, sigma_max=sigma_max, rho=rho)
+    for step in range(num_steps - 1):
+        ratio = t_steps[step] / sigma_max
+        if ratio > 0.005 and ratio < 0.15:
+            collection = []
+            for _ in range(iterations):
+                denoised = edm_sampler(model, images.to(device), t_steps[step:])
+                denoised = (denoised * 127.5 + 128).clip(0, 255).to(torch.uint8).permute(0, 2, 3, 1).cpu().numpy()
+                collection.append(denoised)
+            collection = np.array(collection)
+            print(collection.shape)
+            collection = np.swapaxes(collection,0,1)
+            print(f"{collection.shape} \n")
+            for b, denoised_img in enumerate(collection):
+                os.makedirs(f"{save_path}/{b}", exist_ok=True)
+                create_image_grid(original_img[b], denoised_img, ratio=ratio, save_path=f"{save_path}/{b}/{ratio}.png")
 
 
 
