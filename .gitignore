@@ -1,9 +1,7 @@
 #data 
 datasets/
 models/
-classifier/
 samples/
-bash_scripts/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
