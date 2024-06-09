@@ -17,3 +17,4 @@ srun --ntasks=1 --gres=gpu:1 --cpus-per-task=2 torchrun --standalone --nproc_per
 srun --ntasks=1 --gres=gpu:1 --cpus-per-task=2 torchrun --standalone --nproc_per_node=1 reconstruction/reconstruct.py --image_path=$PROJECT/thoeppe/edm/samples/reconstructions --model_path=$PROJECT/thoeppe/edm/models/edm-cifar10-32x32-uncond-vp.pkl --data_path=$PROJECT/thoeppe/edm/datasets/cifar/train.zip $SAMPLING_PARAMETERS --start_step 2 --skip 4 &
 srun --ntasks=1 --gres=gpu:1 --cpus-per-task=2 torchrun --standalone --nproc_per_node=1 reconstruction/reconstruct.py --image_path=$PROJECT/thoeppe/edm/samples/reconstructions --model_path=$PROJECT/thoeppe/edm/models/edm-cifar10-32x32-uncond-vp.pkl --data_path=$PROJECT/thoeppe/edm/datasets/cifar/train.zip $SAMPLING_PARAMETERS --start_step 3 --skip 4 &
 wait
+
