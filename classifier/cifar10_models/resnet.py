@@ -264,7 +264,7 @@ class ResNet(nn.Module):
         x = x.reshape(x.size(0), -1)
         x = self.fc(x)
 
-        return x, activations_layer0, activations_layer1, activations_layer2, activations_layer3, activations_layer4
+        return x, activations_layer4, activations_layer3, activations_layer2, activations_layer1, activations_layer0
 
 
 def _resnet(arch, block, layers, pretrained, progress, device, **kwargs):
