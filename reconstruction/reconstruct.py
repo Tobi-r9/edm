@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, '/p/project/obdifflearn/thoeppe/edm')
+sys.path.insert(0, '/proj/berzelius-2021-89/users/x_tohop/edm')
 import torch
 import os
 import numpy as np
@@ -68,8 +68,6 @@ def save_images_parallel(img_arr, save_dir):
 
 def main(model_path, data_path, image_path, batch_size=256, num_steps=18, rho=7, max_files=10000, seed=None, start_step=0, skip=1):
     
-    sigma_min=0.002
-    sigma_max=80
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     with open(model_path, 'rb') as f:
@@ -89,14 +87,14 @@ def main(model_path, data_path, image_path, batch_size=256, num_steps=18, rho=7,
         )
         num_files = 0
         reconstructions = []
-        save_dir = os.path.join(image_path, f"{t_steps[step]}")
+        save_dir = os.path.join(image_path, f"{round(t_steps[step].item(), 2)}")
         if seed is not None:
             torch.manual_seed(seed)
         while num_files < max_files:
-            num_files += 256
+            num_files += batch_size
             images, _ = next(dataloader)
             denoised = edm_sampler(model, images.to(device), t_steps[step:])
-            log_gpu_usage()
+            # log_gpu_usage()
             denoised = (denoised * 127.5 + 128).clip(0, 255).to(torch.uint8).permute(0, 2, 3, 1).cpu().numpy()
             reconstructions.append(denoised)
 
