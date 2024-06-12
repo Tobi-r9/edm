@@ -68,6 +68,8 @@ def save_images_parallel(img_arr, save_dir):
 
 def main(model_path, data_path, image_path, batch_size=256, num_steps=18, rho=7, max_files=10000, seed=None, start_step=0, skip=1):
     
+    sigma_min=0.002
+    sigma_max=80
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     with open(model_path, 'rb') as f:
@@ -87,7 +89,7 @@ def main(model_path, data_path, image_path, batch_size=256, num_steps=18, rho=7,
         )
         num_files = 0
         reconstructions = []
-        save_dir = os.path.join(image_path, f"{round(t_steps[step].item(), 2)}")
+        save_dir = os.path.join(image_path, f"{round(t_steps[step].item(), 3)}/images")
         if seed is not None:
             torch.manual_seed(seed)
         while num_files < max_files:
